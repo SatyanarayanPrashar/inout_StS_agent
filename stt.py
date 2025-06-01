@@ -1,3 +1,5 @@
+import asyncio
+from dotenv import load_dotenv
 import sounddevice as sd
 import numpy as np
 import wave
@@ -6,16 +8,16 @@ import os
 import time
 
 from agent_response import get_gpt_response
-from tts import tts_run
 
-OPENAI_API_KEY = ""
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 client = OpenAI()
 
 SAMPLE_RATE = 16000
 CHANNELS = 1
-SILENCE_THRESHOLD = 700
-SILENCE_DURATION_SECONDS = 5
+SILENCE_THRESHOLD = 400
+SILENCE_DURATION_SECONDS = 2
 RECORDING_CHUNK_SECONDS = 1
 MAX_SILENT_TURNS = 2
 
@@ -108,7 +110,9 @@ def audio_processing_loop():
                     print(f"You: {transcribed_text}")
 
                     if transcribed_text and len(transcribed_text.strip().split()) > 2:
-                        response = get_gpt_response(transcribed_text)
+                        print("Starting synchronous part.")
+                        asyncio.run(get_gpt_response(transcribed_text))
+                        print("Synchronous part finished.")
                         silent_turns_counter = 0
                     else:
                         print("Chatbot: Sorry, I couldn't understand the audio or detected only silence.")

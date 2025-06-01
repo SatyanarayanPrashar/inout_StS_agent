@@ -1,42 +1,42 @@
 import asyncio
 import os
-from openai import OpenAI
+from openai import AsyncOpenAI
+from dotenv import load_dotenv
 
 from prompt import system_prompt
 from tts import tts_run
 
-OPENAI_API_KEY = ""
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-client = OpenAI()
+client = AsyncOpenAI()
 
 messages = [
     {"role": "system", "content": system_prompt.agent_prompt},
 ]
 
-def get_gpt_response(transcribed_text):
+async def get_gpt_response(transcribed_text):
     if not transcribed_text:
-        return "I didn't catch that. Could you please repeat?"
+        return
 
+    request_messages = messages + [{"role": "user", "content": transcribed_text}]
     try:
-        messages.append({"role": "user", "content": transcribed_text})
-
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            stream=True,
+        response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=request_messages,
         )
 
         bot_response = response.choices[0].message.content
+        print("Sara 🤖:", bot_response)
         messages.append({"role": "assistant", "content": bot_response})
-
-        print(f"Sara 🤖: {response}")
-        asyncio.run(tts_run(bot_response))
-
-        return bot_response
+        await tts_run(bot_response)
 
     except Exception as e:
-        print(f"Error getting GPT-4o mini response: {e}")
-        return "Sorry, I encountered an error trying to respond."
+        print(f"Error getting GPT-4o response: {e}")
 
-
-get_gpt_response("Hello, how can I clean my floor?")
+if __name__ == "__main__":
+    test_text = "Hello, can you help me with your product?"
+    print("Testing TTS with the following text:")
+    print(test_text)
+    asyncio.run(get_gpt_response(test_text))
+    print("Test complete.")
