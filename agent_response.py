@@ -22,7 +22,7 @@ async def get_gpt_response(transcribed_text):
     request_messages = messages + [{"role": "user", "content": transcribed_text}]
     try:
         response = await client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=request_messages,
         )
 
